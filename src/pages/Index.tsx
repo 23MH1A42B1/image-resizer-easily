@@ -5,7 +5,7 @@ import UploadArea from "@/components/UploadArea";
 import ImagePreview from "@/components/ImagePreview";
 import CompressionControl from "@/components/CompressionControl";
 import { compressImage, getCompressedFileName } from "@/utils/imageProcessor";
-import { SlidersHorizontal, Image, FileImage, FileText } from "lucide-react";
+import { SlidersHorizontal, Image, FileImage, FileText, File } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
@@ -134,47 +134,48 @@ const Index = () => {
             </p>
           </div>
 
-          {/* Conversion Options */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-            <Link to="/converter" className="block">
-              <div className="bg-white border rounded-lg p-4 text-center hover:border-primary transition-all">
-                <div className="flex justify-center mb-2">
-                  <FileText size={32} className="text-primary" />
+          {/* Conversion Options - Made more prominent */}
+          <div className="bg-white border rounded-lg p-6 mb-8">
+            <h3 className="font-semibold text-lg mb-4">Popular Conversions</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <Link to="/converter?tab=pdf-to-images" className="block">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border rounded-lg p-4 text-center hover:border-primary hover:shadow-md transition-all">
+                  <div className="flex justify-center mb-3">
+                    <FileText size={36} className="text-primary" />
+                  </div>
+                  <h3 className="font-medium">PDF to Images</h3>
+                  <p className="text-xs text-muted-foreground mt-1">Convert PDF pages to images</p>
                 </div>
-                <h3 className="font-medium">PDF to Images</h3>
-                <p className="text-xs text-muted-foreground mt-1">Convert PDF pages to images</p>
-              </div>
-            </Link>
-            
-            <Link to="/converter" className="block">
-              <div className="bg-white border rounded-lg p-4 text-center hover:border-primary transition-all">
-                <div className="flex justify-center mb-2">
-                  <FileImage size={32} className="text-primary" />
+              </Link>
+              
+              <Link to="/converter?tab=images-to-pdf" className="block">
+                <div className="bg-gradient-to-br from-green-50 to-teal-50 border rounded-lg p-4 text-center hover:border-primary hover:shadow-md transition-all">
+                  <div className="flex justify-center mb-3">
+                    <FileImage size={36} className="text-primary" />
+                  </div>
+                  <h3 className="font-medium">Images to PDF</h3>
+                  <p className="text-xs text-muted-foreground mt-1">Combine images into a PDF</p>
                 </div>
-                <h3 className="font-medium">Images to PDF</h3>
-                <p className="text-xs text-muted-foreground mt-1">Combine images into a PDF</p>
-              </div>
-            </Link>
-            
-            <Link to="/converter" className="block">
-              <div className="bg-white border rounded-lg p-4 text-center hover:border-primary transition-all">
-                <div className="flex justify-center mb-2">
-                  <FileText size={32} className="text-primary" />
+              </Link>
+              
+              <Link to="/converter?tab=pdf-to-docx" className="block">
+                <div className="bg-gradient-to-br from-purple-50 to-violet-50 border rounded-lg p-4 text-center hover:border-primary hover:shadow-md transition-all">
+                  <div className="flex justify-center mb-3">
+                    <File size={36} className="text-primary" />
+                  </div>
+                  <h3 className="font-medium">PDF to DOCX</h3>
+                  <p className="text-xs text-muted-foreground mt-1">Convert PDF to Word document</p>
                 </div>
-                <h3 className="font-medium">PDF to DOCX</h3>
-                <p className="text-xs text-muted-foreground mt-1">Convert PDF to Word document</p>
-              </div>
-            </Link>
-            
-            <Link to="/converter" className="block">
-              <div className="bg-white border rounded-lg p-4 text-center hover:border-primary transition-all">
-                <div className="flex justify-center mb-2">
-                  <SlidersHorizontal size={32} className="text-primary" />
+              </Link>
+              
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 border rounded-lg p-4 text-center hover:border-primary hover:shadow-md transition-all">
+                <div className="flex justify-center mb-3">
+                  <SlidersHorizontal size={36} className="text-primary" />
                 </div>
                 <h3 className="font-medium">Image Compressor</h3>
                 <p className="text-xs text-muted-foreground mt-1">Reduce image file size</p>
               </div>
-            </Link>
+            </div>
           </div>
 
           {!originalImage ? (

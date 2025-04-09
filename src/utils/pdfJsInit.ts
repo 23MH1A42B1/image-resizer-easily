@@ -5,6 +5,9 @@ import * as pdfjs from 'pdfjs-dist';
 const pdfjsWorker = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
+// Make sure pdfjs is available
+console.log("PDF.js initialized with version:", pdfjs.version);
+
 // Export the configured pdfjs for use elsewhere
 export { pdfjs };
 

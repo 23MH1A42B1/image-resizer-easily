@@ -8,9 +8,17 @@ export async function pdfToImages(file: File): Promise<Blob[]> {
     // Read the file as ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
     
+    // Ensure pdfjs is properly initialized
+    if (!pdfjs) {
+      console.error("PDF.js not properly initialized");
+      throw new Error("PDF.js library not available");
+    }
+    
     // Load the PDF document
     const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
     const numPages = pdf.numPages;
+    
+    console.log(`PDF loaded with ${numPages} pages`);
     
     // Array to store the converted images
     const images: Blob[] = [];
@@ -37,6 +45,8 @@ export async function pdfToImages(file: File): Promise<Blob[]> {
         viewport: viewport
       }).promise;
       
+      console.log(`Rendered page ${i} to canvas`);
+      
       // Convert canvas to blob
       const blob = await new Promise<Blob>((resolve) => {
         canvas.toBlob((blob) => {
@@ -54,8 +64,10 @@ export async function pdfToImages(file: File): Promise<Blob[]> {
       });
       
       images.push(blob);
+      console.log(`Added blob for page ${i}, size: ${blob.size} bytes`);
     }
     
+    console.log(`Returning ${images.length} images`);
     return images;
   } catch (error) {
     console.error('Error converting PDF to images:', error);

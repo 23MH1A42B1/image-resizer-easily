@@ -1,11 +1,11 @@
-
 import React, { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import UploadArea from "@/components/UploadArea";
-import { FileImage, FileText, ArrowLeft, FileWord } from "lucide-react";
+import { FileImage, FileText, ArrowLeft, File } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { imagesToPdf, pdfToImages, pdfToDocx, getFileNameWithExtension } from "@/utils/pdfConverter";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Converter = () => {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -174,45 +174,14 @@ const Converter = () => {
           <p className="text-muted-foreground">Convert between different file formats with ease</p>
         </div>
 
-        {/* Conversion Type Selector */}
-        <div className="flex justify-center mb-8">
-          <div className="inline-flex p-1 bg-gray-100 rounded-lg">
-            <button
-              onClick={() => setConversionType('pdf-to-images')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                conversionType === 'pdf-to-images'
-                  ? 'bg-white shadow-sm text-primary'
-                  : 'text-gray-600 hover:text-primary'
-              }`}
-            >
-              PDF to Images
-            </button>
-            <button
-              onClick={() => setConversionType('images-to-pdf')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                conversionType === 'images-to-pdf'
-                  ? 'bg-white shadow-sm text-primary'
-                  : 'text-gray-600 hover:text-primary'
-              }`}
-            >
-              Images to PDF
-            </button>
-            <button
-              onClick={() => setConversionType('pdf-to-docx')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                conversionType === 'pdf-to-docx'
-                  ? 'bg-white shadow-sm text-primary'
-                  : 'text-gray-600 hover:text-primary'
-              }`}
-            >
-              PDF to DOCX
-            </button>
-          </div>
-        </div>
+        <Tabs defaultValue="pdf-to-images" className="w-full max-w-3xl mx-auto">
+          <TabsList className="grid grid-cols-3 mb-8">
+            <TabsTrigger value="pdf-to-images">PDF to Images</TabsTrigger>
+            <TabsTrigger value="images-to-pdf">Images to PDF</TabsTrigger>
+            <TabsTrigger value="pdf-to-docx">PDF to DOCX</TabsTrigger>
+          </TabsList>
 
-        {/* PDF to Images Converter */}
-        {conversionType === 'pdf-to-images' && (
-          <div className="max-w-3xl mx-auto">
+          <TabsContent value="pdf-to-images">
             <div className="rounded-lg border overflow-hidden bg-white">
               <div className="p-6 bg-primary/5 border-b">
                 <h3 className="text-lg font-medium flex items-center gap-2">
@@ -289,12 +258,9 @@ const Converter = () => {
                 )}
               </div>
             </div>
-          </div>
-        )}
+          </TabsContent>
 
-        {/* Images to PDF Converter */}
-        {conversionType === 'images-to-pdf' && (
-          <div className="max-w-3xl mx-auto">
+          <TabsContent value="images-to-pdf">
             <div className="rounded-lg border overflow-hidden bg-white">
               <div className="p-6 bg-primary/5 border-b">
                 <h3 className="text-lg font-medium flex items-center gap-2">
@@ -335,7 +301,6 @@ const Converter = () => {
                         onClick={() => {
                           setImages([]);
                           setConvertedPdf(null);
-                          // Clean up object URLs
                           images.forEach(image => URL.revokeObjectURL(URL.createObjectURL(image)));
                         }}
                         className="text-sm text-primary hover:underline"
@@ -360,16 +325,13 @@ const Converter = () => {
                 )}
               </div>
             </div>
-          </div>
-        )}
-        
-        {/* PDF to DOCX Converter */}
-        {conversionType === 'pdf-to-docx' && (
-          <div className="max-w-3xl mx-auto">
+          </TabsContent>
+          
+          <TabsContent value="pdf-to-docx">
             <div className="rounded-lg border overflow-hidden bg-white">
               <div className="p-6 bg-primary/5 border-b">
                 <h3 className="text-lg font-medium flex items-center gap-2">
-                  <FileWord className="text-primary" size={20} />
+                  <File className="text-primary" size={20} />
                   PDF to DOCX
                 </h3>
                 <p className="text-sm text-muted-foreground mt-1">Convert PDF files to Word documents</p>
@@ -427,8 +389,8 @@ const Converter = () => {
                 )}
               </div>
             </div>
-          </div>
-        )}
+          </TabsContent>
+        </Tabs>
       </main>
       
       <footer className="mt-auto py-6 border-t bg-white">
