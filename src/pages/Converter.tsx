@@ -197,7 +197,7 @@ const Converter = () => {
                 <div className="space-y-6">
                   <div className="bg-white p-4 border rounded-lg">
                     <div className="flex items-center gap-3">
-                      <FilePdf size={32} className="text-red-500" />
+                      <FileText size={32} className="text-red-500" />
                       <div className="flex-1">
                         <p className="font-medium">{pdfFile.name}</p>
                         <p className="text-sm text-muted-foreground">
