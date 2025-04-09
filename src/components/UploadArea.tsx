@@ -5,11 +5,12 @@ import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 
 interface UploadAreaProps {
-  onImageSelected: (file: File) => void;
+  onImageSelected: (file: File | File[]) => void;
   acceptedTypes?: string[];
   maxSizeMB?: number;
   title?: string;
   subtitle?: string;
+  multiple?: boolean;
 }
 
 const UploadArea: React.FC<UploadAreaProps> = ({ 
@@ -17,7 +18,8 @@ const UploadArea: React.FC<UploadAreaProps> = ({
   acceptedTypes = ["image/*"],
   maxSizeMB = 10,
   title = "Drag and drop your image here",
-  subtitle = "or click to browse (JPEG, PNG, etc.)"
+  subtitle = "or click to browse (JPEG, PNG, etc.)",
+  multiple = false
 }) => {
   const [isDragging, setIsDragging] = useState(false);
 
@@ -52,8 +54,37 @@ const UploadArea: React.FC<UploadAreaProps> = ({
   const handleFiles = (files: FileList) => {
     if (files.length === 0) return;
 
-    const file = files[0];
+    // For single file uploads
+    if (!multiple) {
+      const file = files[0];
+      validateAndProcessFile(file);
+      return;
+    }
     
+    // For multiple file uploads
+    const validFiles: File[] = [];
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (isValidFile(file)) {
+        validFiles.push(file);
+      }
+    }
+    
+    if (validFiles.length > 0) {
+      onImageSelected(validFiles);
+    }
+  };
+  
+  const validateAndProcessFile = (file: File): boolean => {
+    if (isValidFile(file)) {
+      onImageSelected(file);
+      return true;
+    }
+    return false;
+  };
+  
+  const isValidFile = (file: File): boolean => {
     // Check if the file type is accepted
     const isAccepted = acceptedTypes.some(type => {
       if (type.endsWith('/*')) {
@@ -69,7 +100,7 @@ const UploadArea: React.FC<UploadAreaProps> = ({
         description: `Please select a valid file type (${acceptedTypes.join(", ")})`,
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
     // File size check
@@ -79,10 +110,10 @@ const UploadArea: React.FC<UploadAreaProps> = ({
         description: `Please select a file smaller than ${maxSizeMB}MB`,
         variant: "destructive",
       });
-      return;
+      return false;
     }
-
-    onImageSelected(file);
+    
+    return true;
   };
 
   const acceptAttribute = acceptedTypes.join(",");
@@ -105,6 +136,7 @@ const UploadArea: React.FC<UploadAreaProps> = ({
         className="hidden"
         accept={acceptAttribute}
         onChange={handleFileInput}
+        multiple={multiple}
       />
       <div className="flex flex-col items-center gap-3">
         <div className="rounded-full bg-primary/10 p-3">

@@ -13,13 +13,15 @@ const Converter = () => {
   const [convertedPdf, setConvertedPdf] = useState<Blob | null>(null);
   const [isConverting, setIsConverting] = useState(false);
 
-  const handlePdfUpload = (file: File) => {
-    setPdfFile(file);
+  const handlePdfUpload = (file: File | File[]) => {
+    const singleFile = Array.isArray(file) ? file[0] : file;
+    setPdfFile(singleFile);
     setConvertedImages([]);
   };
 
-  const handleImageUpload = (files: File[]) => {
-    setImages(files);
+  const handleImageUpload = (file: File | File[]) => {
+    const fileArray = Array.isArray(file) ? file : [file];
+    setImages(fileArray);
     setConvertedPdf(null);
   };
 
@@ -141,10 +143,9 @@ const Converter = () => {
               {!pdfFile ? (
                 <UploadArea
                   onImageSelected={handlePdfUpload}
-                  accept=".pdf"
-                  text="Upload PDF"
-                  subText="Click to select or drop your PDF file here"
-                  icon={<FileText size={36} className="text-muted-foreground" />}
+                  acceptedTypes={[".pdf", "application/pdf"]}
+                  title="Upload PDF"
+                  subtitle="Click to select or drop your PDF file here"
                 />
               ) : (
                 <div className="space-y-6">
@@ -220,10 +221,9 @@ const Converter = () => {
               {images.length === 0 ? (
                 <UploadArea
                   onImageSelected={handleImageUpload}
-                  accept="image/*"
-                  text="Upload Images"
-                  subText="Click to select or drop your image files here"
-                  icon={<FileImage size={36} className="text-muted-foreground" />}
+                  acceptedTypes={["image/*"]}
+                  title="Upload Images"
+                  subtitle="Click to select or drop your image files here"
                   multiple={true}
                 />
               ) : (
