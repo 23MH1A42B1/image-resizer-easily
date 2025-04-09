@@ -5,7 +5,9 @@ import UploadArea from "@/components/UploadArea";
 import ImagePreview from "@/components/ImagePreview";
 import CompressionControl from "@/components/CompressionControl";
 import { compressImage, getCompressedFileName } from "@/utils/imageProcessor";
-import { SlidersHorizontal, Image } from "lucide-react";
+import { SlidersHorizontal, Image, FileImage } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
   const [originalImage, setOriginalImage] = useState<{
@@ -104,9 +106,17 @@ const Index = () => {
               <Image size={24} className="text-primary" />
               <h1 className="text-xl font-bold">Smart Image Resizer</h1>
             </div>
-            <div className="flex items-center gap-2">
-              <SlidersHorizontal size={18} />
-              <span className="text-sm text-muted-foreground">Image Compressor</span>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal size={18} />
+                <span className="text-sm text-muted-foreground">Image Compressor</span>
+              </div>
+              <Link to="/converter">
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <FileImage size={16} />
+                  Format Converter
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

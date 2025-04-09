@@ -6,9 +6,19 @@ import { toast } from "@/hooks/use-toast";
 
 interface UploadAreaProps {
   onImageSelected: (file: File) => void;
+  acceptedTypes?: string[];
+  maxSizeMB?: number;
+  title?: string;
+  subtitle?: string;
 }
 
-const UploadArea: React.FC<UploadAreaProps> = ({ onImageSelected }) => {
+const UploadArea: React.FC<UploadAreaProps> = ({ 
+  onImageSelected, 
+  acceptedTypes = ["image/*"],
+  maxSizeMB = 10,
+  title = "Drag and drop your image here",
+  subtitle = "or click to browse (JPEG, PNG, etc.)"
+}) => {
   const [isDragging, setIsDragging] = useState(false);
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
@@ -44,22 +54,29 @@ const UploadArea: React.FC<UploadAreaProps> = ({ onImageSelected }) => {
 
     const file = files[0];
     
-    // Check if the file is an image
-    if (!file.type.match("image.*")) {
+    // Check if the file type is accepted
+    const isAccepted = acceptedTypes.some(type => {
+      if (type.endsWith('/*')) {
+        const baseType = type.split('/')[0];
+        return file.type.startsWith(`${baseType}/`);
+      }
+      return file.type === type;
+    });
+
+    if (!isAccepted) {
       toast({
         title: "Invalid file type",
-        description: "Please select an image file (JPEG, PNG, etc.)",
+        description: `Please select a valid file type (${acceptedTypes.join(", ")})`,
         variant: "destructive",
       });
       return;
     }
 
-    // File size check (optional - can be adjusted)
-    const maxSizeMB = 10;
+    // File size check
     if (file.size > maxSizeMB * 1024 * 1024) {
       toast({
         title: "File too large",
-        description: `Please select an image smaller than ${maxSizeMB}MB`,
+        description: `Please select a file smaller than ${maxSizeMB}MB`,
         variant: "destructive",
       });
       return;
@@ -67,6 +84,8 @@ const UploadArea: React.FC<UploadAreaProps> = ({ onImageSelected }) => {
 
     onImageSelected(file);
   };
+
+  const acceptAttribute = acceptedTypes.join(",");
 
   return (
     <div
@@ -84,7 +103,7 @@ const UploadArea: React.FC<UploadAreaProps> = ({ onImageSelected }) => {
         id="fileInput"
         type="file"
         className="hidden"
-        accept="image/*"
+        accept={acceptAttribute}
         onChange={handleFileInput}
       />
       <div className="flex flex-col items-center gap-3">
@@ -93,10 +112,10 @@ const UploadArea: React.FC<UploadAreaProps> = ({ onImageSelected }) => {
         </div>
         <div>
           <p className="font-medium text-gray-700">
-            Drag and drop your image here
+            {title}
           </p>
           <p className="text-sm text-gray-500 mt-1">
-            or click to browse (JPEG, PNG, etc.)
+            {subtitle}
           </p>
         </div>
       </div>
