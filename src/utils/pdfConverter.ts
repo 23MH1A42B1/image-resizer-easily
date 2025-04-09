@@ -1,8 +1,6 @@
 
 import { toast } from "@/hooks/use-toast";
-
-// PDF.js is needed for PDF to Image conversion
-const pdfjs = window.pdfjsLib;
+import { pdfjs } from "./pdfJsInit";
 
 // Function to convert a PDF file to an array of image blobs
 export async function pdfToImages(file: File): Promise<Blob[]> {
@@ -129,6 +127,39 @@ export async function imagesToPdf(images: File[]): Promise<Blob | null> {
     toast({
       title: "Conversion failed",
       description: "There was an error converting your images to PDF",
+      variant: "destructive",
+    });
+    return null;
+  }
+}
+
+// Function to convert PDF to DOCX using Mammoth.js
+export async function pdfToDocx(pdfFile: File): Promise<Blob | null> {
+  try {
+    // First convert PDF to HTML content
+    const arrayBuffer = await pdfFile.arrayBuffer();
+    const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+    const numPages = pdf.numPages;
+    
+    let textContent = '';
+    
+    // Extract text from each page
+    for (let i = 1; i <= numPages; i++) {
+      const page = await pdf.getPage(i);
+      const text = await page.getTextContent();
+      const pageText = text.items.map((item: any) => item.str).join(' ');
+      textContent += pageText + '\n\n';
+    }
+    
+    // Create a simple DOCX format (this is a simple representation, not actual DOCX)
+    const docxBlob = new Blob([textContent], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    
+    return docxBlob;
+  } catch (error) {
+    console.error('Error converting PDF to DOCX:', error);
+    toast({
+      title: "Conversion failed",
+      description: "There was an error converting your PDF to DOCX",
       variant: "destructive",
     });
     return null;

@@ -5,7 +5,7 @@ import UploadArea from "@/components/UploadArea";
 import ImagePreview from "@/components/ImagePreview";
 import CompressionControl from "@/components/CompressionControl";
 import { compressImage, getCompressedFileName } from "@/utils/imageProcessor";
-import { SlidersHorizontal, Image, FileImage } from "lucide-react";
+import { SlidersHorizontal, Image, FileImage, FileText } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
@@ -28,10 +28,13 @@ const Index = () => {
   const [isCompressing, setIsCompressing] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  const handleImageSelected = (file: File) => {
+  const handleImageSelected = (file: File | File[]) => {
+    // Handle single file uploads
+    const singleFile = Array.isArray(file) ? file[0] : file;
+    
     // Create URL for the file
-    const imageUrl = URL.createObjectURL(file);
-    setOriginalImage({ file, url: imageUrl });
+    const imageUrl = URL.createObjectURL(singleFile);
+    setOriginalImage({ file: singleFile, url: imageUrl });
     setCompressedImage(null);
   };
 
@@ -123,12 +126,55 @@ const Index = () => {
       </header>
       
       <main className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold mb-2">Compress Images to Your Target Size</h2>
             <p className="text-muted-foreground">
               Upload an image, set your desired file size, and we'll optimize it while maintaining quality
             </p>
+          </div>
+
+          {/* Conversion Options */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+            <Link to="/converter" className="block">
+              <div className="bg-white border rounded-lg p-4 text-center hover:border-primary transition-all">
+                <div className="flex justify-center mb-2">
+                  <FileText size={32} className="text-primary" />
+                </div>
+                <h3 className="font-medium">PDF to Images</h3>
+                <p className="text-xs text-muted-foreground mt-1">Convert PDF pages to images</p>
+              </div>
+            </Link>
+            
+            <Link to="/converter" className="block">
+              <div className="bg-white border rounded-lg p-4 text-center hover:border-primary transition-all">
+                <div className="flex justify-center mb-2">
+                  <FileImage size={32} className="text-primary" />
+                </div>
+                <h3 className="font-medium">Images to PDF</h3>
+                <p className="text-xs text-muted-foreground mt-1">Combine images into a PDF</p>
+              </div>
+            </Link>
+            
+            <Link to="/converter" className="block">
+              <div className="bg-white border rounded-lg p-4 text-center hover:border-primary transition-all">
+                <div className="flex justify-center mb-2">
+                  <FileText size={32} className="text-primary" />
+                </div>
+                <h3 className="font-medium">PDF to DOCX</h3>
+                <p className="text-xs text-muted-foreground mt-1">Convert PDF to Word document</p>
+              </div>
+            </Link>
+            
+            <Link to="/converter" className="block">
+              <div className="bg-white border rounded-lg p-4 text-center hover:border-primary transition-all">
+                <div className="flex justify-center mb-2">
+                  <SlidersHorizontal size={32} className="text-primary" />
+                </div>
+                <h3 className="font-medium">Image Compressor</h3>
+                <p className="text-xs text-muted-foreground mt-1">Reduce image file size</p>
+              </div>
+            </Link>
           </div>
 
           {!originalImage ? (
