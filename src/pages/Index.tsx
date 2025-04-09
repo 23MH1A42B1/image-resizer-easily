@@ -104,7 +104,7 @@ const Index = () => {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
               <Image size={24} className="text-primary" />
-              <h1 className="text-xl font-bold">Smart Image Resizer</h1>
+              <h1 className="text-xl font-bold">Image Resizer</h1>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
@@ -170,7 +170,7 @@ const Index = () => {
       
       <footer className="mt-auto py-6 border-t bg-white">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>Smart Image Resizer & Compressor - Optimize your images with precision</p>
+          <p>Image Resizer & Compressor - Optimize your images with precision</p>
         </div>
       </footer>
     </div>

@@ -1,43 +1,42 @@
 import React, { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import UploadArea from "@/components/UploadArea";
+import { FileImage, FileText, ArrowLeft } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { pdfToImages, imagesToPdf, getFileNameWithExtension } from "@/utils/pdfConverter";
-import { FileText, FileImage, FileDown, Loader2 } from "lucide-react";
+import { imagesToPdf, pdfToImages, getFileNameWithExtension } from "@/utils/pdfConverter";
 
 const Converter = () => {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [outputImages, setOutputImages] = useState<Blob[]>([]);
-  const [outputPdf, setOutputPdf] = useState<Blob | null>(null);
+  const [images, setImages] = useState<File[]>([]);
+  const [convertedImages, setConvertedImages] = useState<Blob[]>([]);
+  const [convertedPdf, setConvertedPdf] = useState<Blob | null>(null);
   const [isConverting, setIsConverting] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
 
-  const handlePdfSelected = (file: File) => {
+  const handlePdfUpload = (file: File) => {
     setPdfFile(file);
-    setOutputImages([]);
+    setConvertedImages([]);
   };
 
-  const handleImageSelected = (file: File) => {
-    setImageFiles((prev) => [...prev, file]);
-    setOutputPdf(null);
+  const handleImageUpload = (files: File[]) => {
+    setImages(files);
+    setConvertedPdf(null);
   };
 
-  const handlePdfToImages = async () => {
+  const handleConvertPdfToImages = async () => {
     if (!pdfFile) return;
-    
+
     setIsConverting(true);
     try {
       const images = await pdfToImages(pdfFile);
-      setOutputImages(images);
-      
+      setConvertedImages(images);
+
       toast({
-        title: "Conversion successful",
-        description: `Converted ${images.length} pages to images`,
+        title: "PDF converted to images!",
+        description: `Successfully converted PDF to ${images.length} images.`,
       });
     } catch (error) {
-      console.error("Error in PDF to images conversion:", error);
+      console.error("Conversion error:", error);
       toast({
         title: "Conversion failed",
         description: "There was an error processing your PDF",
@@ -48,25 +47,23 @@ const Converter = () => {
     }
   };
 
-  const handleImagesToPdf = async () => {
-    if (imageFiles.length === 0) return;
-    
+  const handleConvertImagesToPdf = async () => {
+    if (images.length === 0) return;
+
     setIsConverting(true);
     try {
-      const pdfBlob = await imagesToPdf(imageFiles);
-      if (pdfBlob) {
-        setOutputPdf(pdfBlob);
-        
-        toast({
-          title: "Conversion successful",
-          description: `Created PDF with ${imageFiles.length} images`,
-        });
-      }
+      const pdfBlob = await imagesToPdf(images);
+      setConvertedPdf(pdfBlob);
+
+      toast({
+        title: "Images converted to PDF!",
+        description: `Successfully converted ${images.length} images to PDF.`,
+      });
     } catch (error) {
-      console.error("Error in images to PDF conversion:", error);
+      console.error("Conversion error:", error);
       toast({
         title: "Conversion failed",
-        description: "There was an error creating your PDF",
+        description: "There was an error processing your images",
         variant: "destructive",
       });
     } finally {
@@ -74,80 +71,36 @@ const Converter = () => {
     }
   };
 
-  const handleDownloadImages = () => {
-    if (outputImages.length === 0 || !pdfFile) return;
-    
-    setIsDownloading(true);
-    try {
-      outputImages.forEach((blob, index) => {
-        const fileName = `${pdfFile.name.replace('.pdf', '')}_page_${index + 1}.png`;
-        const downloadLink = document.createElement("a");
-        downloadLink.href = URL.createObjectURL(blob);
-        downloadLink.download = fileName;
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-      });
-      
-      toast({
-        title: "Download started",
-        description: `Downloading ${outputImages.length} images`,
-      });
-    } catch (error) {
-      toast({
-        title: "Download failed",
-        description: "There was an error downloading your images",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDownloading(false);
-    }
-  };
-
   const handleDownloadPdf = () => {
-    if (!outputPdf || imageFiles.length === 0) return;
-    
-    setIsDownloading(true);
-    try {
-      const fileName = imageFiles.length === 1 
-        ? getFileNameWithExtension(imageFiles[0].name, 'pdf')
-        : `converted_images_${new Date().getTime()}.pdf`;
-      
-      const downloadLink = document.createElement("a");
-      downloadLink.href = URL.createObjectURL(outputPdf);
-      downloadLink.download = fileName;
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-      
-      toast({
-        title: "Download started",
-        description: `Saved as ${fileName}`,
-      });
-    } catch (error) {
-      toast({
-        title: "Download failed",
-        description: "There was an error downloading your PDF",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDownloading(false);
-    }
+    if (!convertedPdf) return;
+
+    const fileName = getFileNameWithExtension("converted", "pdf");
+    const downloadLink = document.createElement("a");
+    downloadLink.href = URL.createObjectURL(convertedPdf);
+    downloadLink.download = fileName;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+
+    toast({
+      title: "Download started",
+      description: `Saved as ${fileName}`,
+    });
   };
 
-  const removeImage = (index: number) => {
-    setImageFiles(files => files.filter((_, i) => i !== index));
-    setOutputPdf(null);
-  };
+  const handleDownloadImage = (image: Blob, index: number) => {
+    const fileName = getFileNameWithExtension(`page-${index + 1}`, "png");
+    const downloadLink = document.createElement("a");
+    downloadLink.href = URL.createObjectURL(image);
+    downloadLink.download = fileName;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
 
-  const resetPdfToImages = () => {
-    setPdfFile(null);
-    setOutputImages([]);
-  };
-
-  const resetImagesToPdf = () => {
-    setImageFiles([]);
-    setOutputPdf(null);
+    toast({
+      title: "Download started",
+      description: `Saved as ${fileName}`,
+    });
   };
 
   return (
@@ -156,42 +109,42 @@ const Converter = () => {
         <div className="container mx-auto py-4 px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
+              <Link to="/" className="flex items-center gap-2 text-primary hover:text-primary/80">
+                <ArrowLeft size={18} />
+                <span>Back</span>
+              </Link>
+              <div className="w-px h-6 bg-gray-300 mx-2"></div>
               <FileImage size={24} className="text-primary" />
-              <h1 className="text-xl font-bold">File Format Converter</h1>
+              <h1 className="text-xl font-bold">Image Resizer</h1>
             </div>
           </div>
         </div>
       </header>
       
       <main className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold mb-2">Convert Between Images and PDF</h2>
-            <p className="text-muted-foreground">
-              Convert your PDFs to images or combine multiple images into a single PDF file
-            </p>
-          </div>
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold mb-2">File Format Converter</h2>
+          <p className="text-muted-foreground">Convert between PDF and images with ease</p>
+        </div>
 
-          <Tabs defaultValue="pdf-to-images" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="pdf-to-images" className="flex gap-2 items-center">
-                <FileText size={18} />
+        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          {/* PDF to Images section */}
+          <div className="rounded-lg border overflow-hidden bg-white">
+            <div className="p-6 bg-primary/5 border-b">
+              <h3 className="text-lg font-medium flex items-center gap-2">
+                <FileText className="text-primary" size={20} />
                 PDF to Images
-              </TabsTrigger>
-              <TabsTrigger value="images-to-pdf" className="flex gap-2 items-center">
-                <FileImage size={18} />
-                Images to PDF
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="pdf-to-images" className="space-y-6">
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">Convert PDF pages to PNG images</p>
+            </div>
+            <div className="p-6">
               {!pdfFile ? (
-                <UploadArea 
-                  onImageSelected={handlePdfSelected} 
-                  acceptedTypes={["application/pdf"]}
-                  maxSizeMB={20}
-                  title="Drag and drop your PDF here"
-                  subtitle="or click to browse (Max size: 20MB)"
+                <UploadArea
+                  onImageSelected={handlePdfUpload}
+                  accept=".pdf"
+                  text="Upload PDF"
+                  subText="Click to select or drop your PDF file here"
+                  icon={<FileText size={36} className="text-muted-foreground" />}
                 />
               ) : (
                 <div className="space-y-6">
@@ -201,181 +154,132 @@ const Converter = () => {
                       <div className="flex-1">
                         <p className="font-medium">{pdfFile.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          {(pdfFile.size / 1024 / 1024).toFixed(2)} MB
+                          {(pdfFile.size / 1024).toFixed(1)} KB
                         </p>
                       </div>
                     </div>
                   </div>
-
-                  <div className="flex gap-4 justify-center">
-                    <Button 
-                      variant="outline" 
-                      onClick={resetPdfToImages}
+                  
+                  <div className="flex items-center justify-between">
+                    <button
+                      onClick={() => {
+                        setPdfFile(null);
+                        setConvertedImages([]);
+                      }}
+                      className="text-sm text-primary hover:underline"
                     >
-                      Choose Different PDF
-                    </Button>
+                      Upload a different PDF
+                    </button>
                     <Button 
-                      onClick={handlePdfToImages}
+                      onClick={handleConvertPdfToImages} 
                       disabled={isConverting}
-                      className="flex gap-2 items-center"
                     >
-                      {isConverting ? (
-                        <>
-                          <Loader2 className="animate-spin" />
-                          Converting...
-                        </>
-                      ) : (
-                        <>
-                          Convert to Images
-                        </>
-                      )}
+                      {isConverting ? "Converting..." : "Convert to Images"}
                     </Button>
                   </div>
 
-                  {outputImages.length > 0 && (
-                    <div className="space-y-4">
-                      <h3 className="font-semibold text-lg">Output Images ({outputImages.length})</h3>
-                      
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        {outputImages.map((blob, index) => (
-                          <div key={index} className="border rounded-md overflow-hidden bg-white">
-                            <div className="aspect-square overflow-hidden">
-                              <img 
-                                src={URL.createObjectURL(blob)} 
-                                alt={`Page ${index + 1}`} 
-                                className="w-full h-full object-contain"
-                              />
-                            </div>
-                            <div className="p-2 text-center text-sm">
-                              Page {index + 1}
+                  {convertedImages.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">Converted Images ({convertedImages.length})</h4>
+                      <div className="grid grid-cols-2 gap-3">
+                        {convertedImages.map((image, index) => (
+                          <div key={index} className="border rounded-lg overflow-hidden">
+                            <img 
+                              src={URL.createObjectURL(image)} 
+                              alt={`Page ${index + 1}`} 
+                              className="w-full h-32 object-contain bg-gray-50"
+                            />
+                            <div className="p-2 text-center">
+                              <button
+                                onClick={() => handleDownloadImage(image, index)}
+                                className="text-xs text-primary hover:underline"
+                              >
+                                Download Page {index + 1}
+                              </button>
                             </div>
                           </div>
                         ))}
-                      </div>
-
-                      <div className="flex justify-center mt-4">
-                        <Button 
-                          onClick={handleDownloadImages} 
-                          disabled={isDownloading}
-                          className="flex gap-2 items-center"
-                        >
-                          {isDownloading ? (
-                            <>
-                              <Loader2 className="animate-spin" />
-                              Downloading...
-                            </>
-                          ) : (
-                            <>
-                              <FileDown size={16} />
-                              Download All Images
-                            </>
-                          )}
-                        </Button>
                       </div>
                     </div>
                   )}
                 </div>
               )}
-            </TabsContent>
-
-            <TabsContent value="images-to-pdf" className="space-y-6">
-              <div className="space-y-6">
-                {imageFiles.length > 0 && (
-                  <div className="space-y-4">
-                    <h3 className="font-semibold">Selected Images ({imageFiles.length})</h3>
-                    
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                      {imageFiles.map((file, index) => (
-                        <div key={index} className="border rounded-md overflow-hidden bg-white relative group">
-                          <div className="aspect-square overflow-hidden">
-                            <img 
-                              src={URL.createObjectURL(file)} 
-                              alt={file.name} 
-                              className="w-full h-full object-contain"
-                            />
-                          </div>
-                          <div className="p-2 text-sm">
-                            <div className="truncate">{file.name}</div>
-                            <div className="text-xs text-gray-500">
-                              {(file.size / 1024).toFixed(0)} KB
-                            </div>
-                          </div>
-                          <button 
-                            onClick={() => removeImage(index)}
-                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            ×
-                          </button>
+            </div>
+          </div>
+          
+          {/* Images to PDF section */}
+          <div className="rounded-lg border overflow-hidden bg-white">
+            <div className="p-6 bg-primary/5 border-b">
+              <h3 className="text-lg font-medium flex items-center gap-2">
+                <FileImage className="text-primary" size={20} />
+                Images to PDF
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">Combine multiple images into a single PDF</p>
+            </div>
+            <div className="p-6">
+              {images.length === 0 ? (
+                <UploadArea
+                  onImageSelected={handleImageUpload}
+                  accept="image/*"
+                  text="Upload Images"
+                  subText="Click to select or drop your image files here"
+                  icon={<FileImage size={36} className="text-muted-foreground" />}
+                  multiple={true}
+                />
+              ) : (
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Selected Images ({images.length})</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      {images.map((image, index) => (
+                        <div key={index} className="border rounded-lg overflow-hidden">
+                          <img 
+                            src={URL.createObjectURL(image)} 
+                            alt={image.name} 
+                            className="w-full h-32 object-contain bg-gray-50"
+                          />
+                          <div className="p-2 text-xs truncate text-center">{image.name}</div>
                         </div>
                       ))}
                     </div>
                   </div>
-                )}
-
-                <UploadArea
-                  onImageSelected={handleImageSelected}
-                  acceptedTypes={["image/jpeg", "image/png", "image/gif", "image/webp"]}
-                  title={imageFiles.length > 0 ? "Add more images" : "Drag and drop your images here"}
-                  subtitle="or click to browse (JPEG, PNG, GIF, WEBP)"
-                />
-
-                {imageFiles.length > 0 && (
-                  <div className="flex gap-4 justify-center">
-                    <Button 
-                      variant="outline" 
-                      onClick={resetImagesToPdf}
+                  
+                  <div className="flex items-center justify-between">
+                    <button
+                      onClick={() => {
+                        setImages([]);
+                        setConvertedPdf(null);
+                        // Clean up object URLs
+                        images.forEach(image => URL.revokeObjectURL(URL.createObjectURL(image)));
+                      }}
+                      className="text-sm text-primary hover:underline"
                     >
-                      Clear All Images
-                    </Button>
+                      Upload different images
+                    </button>
                     <Button 
-                      onClick={handleImagesToPdf}
-                      disabled={isConverting || imageFiles.length === 0}
-                      className="flex gap-2 items-center"
+                      onClick={handleConvertImagesToPdf} 
+                      disabled={isConverting || images.length === 0}
                     >
-                      {isConverting ? (
-                        <>
-                          <Loader2 className="animate-spin" />
-                          Creating PDF...
-                        </>
-                      ) : (
-                        <>
-                          Create PDF
-                        </>
-                      )}
+                      {isConverting ? "Converting..." : "Convert to PDF"}
                     </Button>
                   </div>
-                )}
 
-                {outputPdf && (
-                  <div className="mt-6 flex justify-center">
-                    <Button 
-                      onClick={handleDownloadPdf}
-                      disabled={isDownloading}
-                      className="flex gap-2 items-center"
-                    >
-                      {isDownloading ? (
-                        <>
-                          <Loader2 className="animate-spin" />
-                          Downloading...
-                        </>
-                      ) : (
-                        <>
-                          <FileDown size={16} />
-                          Download PDF
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
+                  {convertedPdf && (
+                    <div className="text-center p-4 border rounded-lg">
+                      <p className="mb-2">PDF created successfully!</p>
+                      <Button onClick={handleDownloadPdf} size="sm">Download PDF</Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </main>
       
       <footer className="mt-auto py-6 border-t bg-white">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>File Format Converter - Convert between PDF and image formats</p>
+          <p>Image Resizer & Converter - Optimize and convert your images with precision</p>
         </div>
       </footer>
     </div>
