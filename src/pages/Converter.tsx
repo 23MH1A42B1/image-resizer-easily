@@ -1,11 +1,10 @@
-
 import React, { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import UploadArea from "@/components/UploadArea";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { pdfToImages, imagesToPdf, getFileNameWithExtension } from "@/utils/pdfConverter";
-import { FilePdf, FileImage, FileDown, Loader2 } from "lucide-react";
+import { FileText, FileImage, FileDown, Loader2 } from "lucide-react";
 
 const Converter = () => {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -15,19 +14,16 @@ const Converter = () => {
   const [isConverting, setIsConverting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  // Handle PDF upload for PDF to Images conversion
   const handlePdfSelected = (file: File) => {
     setPdfFile(file);
     setOutputImages([]);
   };
 
-  // Handle Image uploads for Images to PDF conversion
   const handleImageSelected = (file: File) => {
     setImageFiles((prev) => [...prev, file]);
     setOutputPdf(null);
   };
 
-  // Convert PDF to Images
   const handlePdfToImages = async () => {
     if (!pdfFile) return;
     
@@ -52,7 +48,6 @@ const Converter = () => {
     }
   };
 
-  // Convert Images to PDF
   const handleImagesToPdf = async () => {
     if (imageFiles.length === 0) return;
     
@@ -79,7 +74,6 @@ const Converter = () => {
     }
   };
 
-  // Download converted images
   const handleDownloadImages = () => {
     if (outputImages.length === 0 || !pdfFile) return;
     
@@ -110,7 +104,6 @@ const Converter = () => {
     }
   };
 
-  // Download converted PDF
   const handleDownloadPdf = () => {
     if (!outputPdf || imageFiles.length === 0) return;
     
@@ -142,19 +135,16 @@ const Converter = () => {
     }
   };
 
-  // Remove an image from the selection
   const removeImage = (index: number) => {
     setImageFiles(files => files.filter((_, i) => i !== index));
     setOutputPdf(null);
   };
 
-  // Reset PDF to Images state
   const resetPdfToImages = () => {
     setPdfFile(null);
     setOutputImages([]);
   };
 
-  // Reset Images to PDF state
   const resetImagesToPdf = () => {
     setImageFiles([]);
     setOutputPdf(null);
@@ -185,7 +175,7 @@ const Converter = () => {
           <Tabs defaultValue="pdf-to-images" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="pdf-to-images" className="flex gap-2 items-center">
-                <FilePdf size={18} />
+                <FileText size={18} />
                 PDF to Images
               </TabsTrigger>
               <TabsTrigger value="images-to-pdf" className="flex gap-2 items-center">
@@ -194,7 +184,6 @@ const Converter = () => {
               </TabsTrigger>
             </TabsList>
 
-            {/* PDF to Images Tab */}
             <TabsContent value="pdf-to-images" className="space-y-6">
               {!pdfFile ? (
                 <UploadArea 
@@ -289,7 +278,6 @@ const Converter = () => {
               )}
             </TabsContent>
 
-            {/* Images to PDF Tab */}
             <TabsContent value="images-to-pdf" className="space-y-6">
               <div className="space-y-6">
                 {imageFiles.length > 0 && (
