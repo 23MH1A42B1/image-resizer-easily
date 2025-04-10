@@ -1,11 +1,10 @@
-
 import React, { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import UploadArea from "@/components/UploadArea";
 import ImagePreview from "@/components/ImagePreview";
 import CompressionControl from "@/components/CompressionControl";
 import { compressImage, getCompressedFileName } from "@/utils/imageProcessor";
-import { SlidersHorizontal, Image, FileImage, FileText, File } from "lucide-react";
+import { SlidersHorizontal, Image, FileImage, FileText } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
@@ -29,10 +28,8 @@ const Index = () => {
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleImageSelected = (file: File | File[]) => {
-    // Handle single file uploads
     const singleFile = Array.isArray(file) ? file[0] : file;
     
-    // Create URL for the file
     const imageUrl = URL.createObjectURL(singleFile);
     setOriginalImage({ file: singleFile, url: imageUrl });
     setCompressedImage(null);
@@ -134,10 +131,9 @@ const Index = () => {
             </p>
           </div>
 
-          {/* Conversion Options - Made more prominent */}
           <div className="bg-white border rounded-lg p-6 mb-8">
             <h3 className="font-semibold text-lg mb-4">Popular Conversions</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <Link to="/converter?tab=pdf-to-images" className="block">
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border rounded-lg p-4 text-center hover:border-primary hover:shadow-md transition-all">
                   <div className="flex justify-center mb-3">
@@ -155,16 +151,6 @@ const Index = () => {
                   </div>
                   <h3 className="font-medium">Images to PDF</h3>
                   <p className="text-xs text-muted-foreground mt-1">Combine images into a PDF</p>
-                </div>
-              </Link>
-              
-              <Link to="/converter?tab=pdf-to-docx" className="block">
-                <div className="bg-gradient-to-br from-purple-50 to-violet-50 border rounded-lg p-4 text-center hover:border-primary hover:shadow-md transition-all">
-                  <div className="flex justify-center mb-3">
-                    <File size={36} className="text-primary" />
-                  </div>
-                  <h3 className="font-medium">PDF to DOCX</h3>
-                  <p className="text-xs text-muted-foreground mt-1">Convert PDF to Word document</p>
                 </div>
               </Link>
               
@@ -201,7 +187,6 @@ const Index = () => {
                   onClick={() => {
                     setOriginalImage(null);
                     setCompressedImage(null);
-                    // Clean up object URLs
                     if (originalImage) URL.revokeObjectURL(originalImage.url);
                     if (compressedImage) URL.revokeObjectURL(compressedImage.url);
                   }}

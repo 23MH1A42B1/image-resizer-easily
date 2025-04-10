@@ -18,6 +18,7 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
   onCompress,
 }) => {
   const fileSizeKB = fileSize / 1024;
+  const maxSizeKB = 10 * 1024; // 10MB in KB
   const [targetSizeKB, setTargetSizeKB] = useState(
     Math.max(20, Math.round(fileSizeKB * 0.5))
   ); // Default to 50% of original
@@ -28,7 +29,8 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
     if (isNaN(value) || value <= 0) {
       setTargetSizeKB(0);
     } else {
-      setTargetSizeKB(Math.min(value, fileSizeKB - 1)); // Can't be larger than original
+      // Allow up to 10MB or original size, whichever is smaller
+      setTargetSizeKB(Math.min(value, Math.max(maxSizeKB, fileSizeKB))); 
     }
   };
 
@@ -48,7 +50,7 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
               id="targetSize"
               type="number"
               min={1}
-              max={Math.floor(fileSizeKB) - 1}
+              max={maxSizeKB}
               value={targetSizeKB}
               onChange={handleTargetSizeChange}
             />
@@ -61,7 +63,7 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Original: {Math.round(fileSizeKB)} KB • Max recommended: {Math.round(fileSizeKB * 0.8)} KB
+            Original: {Math.round(fileSizeKB)} KB • Max allowed: 10,240 KB (10MB)
           </p>
         </div>
 

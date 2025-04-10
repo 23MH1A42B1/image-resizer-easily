@@ -1,10 +1,11 @@
+
 import React, { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import UploadArea from "@/components/UploadArea";
-import { FileImage, FileText, ArrowLeft, File } from "lucide-react";
+import { FileImage, FileText, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { imagesToPdf, pdfToImages, pdfToDocx, getFileNameWithExtension } from "@/utils/pdfConverter";
+import { imagesToPdf, pdfToImages, getFileNameWithExtension } from "@/utils/pdfConverter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Converter = () => {
@@ -12,15 +13,12 @@ const Converter = () => {
   const [images, setImages] = useState<File[]>([]);
   const [convertedImages, setConvertedImages] = useState<Blob[]>([]);
   const [convertedPdf, setConvertedPdf] = useState<Blob | null>(null);
-  const [convertedDocx, setConvertedDocx] = useState<Blob | null>(null);
   const [isConverting, setIsConverting] = useState(false);
-  const [conversionType, setConversionType] = useState<'pdf-to-images' | 'images-to-pdf' | 'pdf-to-docx'>('pdf-to-images');
 
   const handlePdfUpload = (file: File | File[]) => {
     const singleFile = Array.isArray(file) ? file[0] : file;
     setPdfFile(singleFile);
     setConvertedImages([]);
-    setConvertedDocx(null);
   };
 
   const handleImageUpload = (file: File | File[]) => {
@@ -37,39 +35,23 @@ const Converter = () => {
       const images = await pdfToImages(pdfFile);
       setConvertedImages(images);
 
-      toast({
-        title: "PDF converted to images!",
-        description: `Successfully converted PDF to ${images.length} images.`,
-      });
+      if (images.length > 0) {
+        toast({
+          title: "PDF converted to images!",
+          description: `Successfully converted PDF to ${images.length} images.`,
+        });
+      } else {
+        toast({
+          title: "Conversion issue",
+          description: "No images were generated. Please try a different PDF.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error("Conversion error:", error);
       toast({
         title: "Conversion failed",
         description: "There was an error processing your PDF",
-        variant: "destructive",
-      });
-    } finally {
-      setIsConverting(false);
-    }
-  };
-
-  const handleConvertPdfToDocx = async () => {
-    if (!pdfFile) return;
-
-    setIsConverting(true);
-    try {
-      const docxBlob = await pdfToDocx(pdfFile);
-      setConvertedDocx(docxBlob);
-
-      toast({
-        title: "PDF converted to DOCX!",
-        description: "Successfully converted PDF to DOCX format.",
-      });
-    } catch (error) {
-      console.error("Conversion error:", error);
-      toast({
-        title: "Conversion failed",
-        description: "There was an error converting your PDF to DOCX",
         variant: "destructive",
       });
     } finally {
@@ -107,23 +89,6 @@ const Converter = () => {
     const fileName = getFileNameWithExtension("converted", "pdf");
     const downloadLink = document.createElement("a");
     downloadLink.href = URL.createObjectURL(convertedPdf);
-    downloadLink.download = fileName;
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
-
-    toast({
-      title: "Download started",
-      description: `Saved as ${fileName}`,
-    });
-  };
-
-  const handleDownloadDocx = () => {
-    if (!convertedDocx || !pdfFile) return;
-
-    const fileName = getFileNameWithExtension(pdfFile.name, "docx");
-    const downloadLink = document.createElement("a");
-    downloadLink.href = URL.createObjectURL(convertedDocx);
     downloadLink.download = fileName;
     document.body.appendChild(downloadLink);
     downloadLink.click();
@@ -175,10 +140,9 @@ const Converter = () => {
         </div>
 
         <Tabs defaultValue="pdf-to-images" className="w-full max-w-3xl mx-auto">
-          <TabsList className="grid grid-cols-3 mb-8">
+          <TabsList className="grid grid-cols-2 mb-8">
             <TabsTrigger value="pdf-to-images">PDF to Images</TabsTrigger>
             <TabsTrigger value="images-to-pdf">Images to PDF</TabsTrigger>
-            <TabsTrigger value="pdf-to-docx">PDF to DOCX</TabsTrigger>
           </TabsList>
 
           <TabsContent value="pdf-to-images">
@@ -319,70 +283,6 @@ const Converter = () => {
                       <div className="text-center p-4 border rounded-lg">
                         <p className="mb-2">PDF created successfully!</p>
                         <Button onClick={handleDownloadPdf} size="sm">Download PDF</Button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="pdf-to-docx">
-            <div className="rounded-lg border overflow-hidden bg-white">
-              <div className="p-6 bg-primary/5 border-b">
-                <h3 className="text-lg font-medium flex items-center gap-2">
-                  <File className="text-primary" size={20} />
-                  PDF to DOCX
-                </h3>
-                <p className="text-sm text-muted-foreground mt-1">Convert PDF files to Word documents</p>
-              </div>
-              <div className="p-6">
-                {!pdfFile ? (
-                  <UploadArea
-                    onImageSelected={handlePdfUpload}
-                    acceptedTypes={[".pdf", "application/pdf"]}
-                    title="Upload PDF"
-                    subtitle="Click to select or drop your PDF file here"
-                  />
-                ) : (
-                  <div className="space-y-6">
-                    <div className="bg-white p-4 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <FileText size={32} className="text-red-500" />
-                        <div className="flex-1">
-                          <p className="font-medium">{pdfFile.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {(pdfFile.size / 1024).toFixed(1)} KB
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <button
-                        onClick={() => {
-                          setPdfFile(null);
-                          setConvertedDocx(null);
-                        }}
-                        className="text-sm text-primary hover:underline"
-                      >
-                        Upload a different PDF
-                      </button>
-                      <Button 
-                        onClick={handleConvertPdfToDocx} 
-                        disabled={isConverting}
-                      >
-                        {isConverting ? "Converting..." : "Convert to DOCX"}
-                      </Button>
-                    </div>
-
-                    {convertedDocx && (
-                      <div className="text-center p-4 border rounded-lg">
-                        <p className="mb-2">DOCX file created successfully!</p>
-                        <p className="text-xs text-muted-foreground mb-2">
-                          Note: This is a simple text extraction. For better formatting, consider using specialized software.
-                        </p>
-                        <Button onClick={handleDownloadDocx} size="sm">Download DOCX</Button>
                       </div>
                     )}
                   </div>
