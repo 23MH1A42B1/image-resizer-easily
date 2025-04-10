@@ -38,9 +38,9 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
     setQuality(value[0] / 100);
   };
 
-  // Convert KB to MB for display and button
-  const setToMB = (mbValue: number) => {
-    const kbValue = mbValue * 1024; // Convert MB to KB
+  // Set to 1024 KB (1MB equivalent) button
+  const setTo1024KB = () => {
+    const kbValue = 1024; // 1024 KB = 1 MB
     setTargetSizeKB(Math.min(kbValue, fileSizeKB));
   };
 
@@ -62,10 +62,10 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
             />
             <Button
               variant="outline"
-              onClick={() => setToMB(1)}
+              onClick={setTo1024KB}
               type="button"
             >
-              1MB
+              1024KB
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-1">

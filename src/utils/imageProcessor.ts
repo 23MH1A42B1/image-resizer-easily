@@ -133,7 +133,7 @@ export const formatFileSize = (bytes: number): string => {
   } else if (bytes < 1024 * 1024) {
     return `${(bytes / 1024).toFixed(1)} KB`;
   } else {
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+    return `${(bytes / 1024).toFixed(0)} KB`;
   }
 };
 
@@ -145,13 +145,8 @@ export const getCompressedFileName = (originalName: string, sizeKB: number): str
   const ext = nameParts.pop();
   const baseName = nameParts.join('.');
   
-  // Format the size for display (KB or MB)
-  let sizeDisplay: string;
-  if (sizeKB >= 1024) {
-    sizeDisplay = `${(sizeKB / 1024).toFixed(1)}mb`;
-  } else {
-    sizeDisplay = `${Math.round(sizeKB)}kb`;
-  }
+  // Always display size in KB
+  const sizeDisplay = `${Math.round(sizeKB)}kb`;
   
   return `${baseName}_${sizeDisplay}.${ext}`;
 };
