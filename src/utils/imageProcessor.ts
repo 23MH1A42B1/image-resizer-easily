@@ -26,7 +26,10 @@ export const compressImage = async (
         let quality = initialQuality;
         let blob: Blob;
         let attempts = 0;
-        const maxAttempts = 15;  // Increased max attempts
+        let bestBlob: Blob | null = null;
+        let bestQuality = 0;
+        let bestSizeDiff = Infinity;
+        const maxAttempts = 20;  // Increased max attempts for better precision
         
         // Create a canvas to draw the image - moved outside the loop for efficiency
         const canvas = document.createElement('canvas');
@@ -79,28 +82,55 @@ export const compressImage = async (
               
               console.log(`Attempt ${attempts}: Quality ${currentQuality.toFixed(2)}, Size: ${sizeInKB.toFixed(1)}KB, Target: ${targetSizeKB}KB`);
               
+              // Track the best result (closest to target size)
+              const currentSizeDiff = Math.abs(sizeInKB - targetSizeKB);
+              if (currentSizeDiff < bestSizeDiff) {
+                bestSizeDiff = currentSizeDiff;
+                bestBlob = result;
+                bestQuality = currentQuality;
+              }
+              
               // Check if we're close enough to target or reached max attempts
               const sizeRatio = sizeInKB / targetSizeKB;
-              const isWithinTolerance = sizeRatio >= 0.90 && sizeRatio <= 1.10; // 10% tolerance
+              const isWithinTolerance = sizeRatio >= 0.95 && sizeRatio <= 1.05; // 5% tolerance
               
               if (isWithinTolerance || attempts >= maxAttempts) {
                 // We've reached target size or max attempts, return result
-                resolve({
-                  blob: result,
-                  quality: currentQuality,
-                  dimensions: { width, height }
-                });
+                console.log(`Final result: Quality ${currentQuality.toFixed(2)}, Size: ${sizeInKB.toFixed(1)}KB, Target: ${targetSizeKB}KB`);
+                
+                // If we have a best blob and we're not within tolerance, use the best one
+                if (!isWithinTolerance && bestBlob) {
+                  console.log(`Using best match: Quality ${bestQuality.toFixed(2)}, Size: ${(bestBlob.size / 1024).toFixed(1)}KB`);
+                  resolve({
+                    blob: bestBlob,
+                    quality: bestQuality,
+                    dimensions: { width, height }
+                  });
+                } else {
+                  resolve({
+                    blob: result,
+                    quality: currentQuality,
+                    dimensions: { width, height }
+                  });
+                }
               } else {
-                // Binary search for next quality level with more precise adjustments
+                // Binary search with more precise adjustments
                 if (sizeInKB > targetSizeKB) {
                   maxQuality = currentQuality;
                   // More aggressive quality reduction for larger files
-                  const reduction = sizeInKB > targetSizeKB * 2 ? 0.7 : 0.5;
+                  const reduction = sizeInKB > targetSizeKB * 2 ? 0.5 : 0.7;
                   quality = minQuality + (currentQuality - minQuality) * reduction;
                 } else {
                   minQuality = currentQuality;
                   // More conservative quality increase for smaller files
                   quality = currentQuality + (maxQuality - currentQuality) * 0.3;
+                }
+                
+                // Prevent getting stuck in tiny increments
+                if (Math.abs(quality - currentQuality) < 0.01) {
+                  quality = sizeInKB > targetSizeKB ? 
+                    Math.max(minQuality, currentQuality - 0.05) : 
+                    Math.min(maxQuality, currentQuality + 0.05);
                 }
                 
                 // Continue the loop with new quality

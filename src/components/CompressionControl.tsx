@@ -18,29 +18,30 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
   onCompress,
 }) => {
   const fileSizeKB = fileSize / 1024;
-  const maxSizeKB = 10 * 1024; // 10MB in KB
+  const maxSizeKB = Math.min(10 * 1024, fileSizeKB); // 10MB in KB or original size, whichever is smaller
   
-  // Default to 80% of original or 1024KB, whichever is larger
-  const initialTargetSize = Math.max(1024, Math.round(fileSizeKB * 0.8));
+  // Default to 80% of original or 1024KB, whichever is smaller
+  const initialTargetSize = Math.min(Math.round(fileSizeKB * 0.8), 1024);
   const [targetSizeKB, setTargetSizeKB] = useState(
-    Math.min(initialTargetSize, maxSizeKB)
+    Math.max(10, initialTargetSize) // Ensure minimum 10KB
   );
   
   const [quality, setQuality] = useState(0.7); // Default quality value
 
   // Update target size when file size changes
   useEffect(() => {
-    const newTargetSize = Math.max(1024, Math.round(fileSizeKB * 0.8));
-    setTargetSizeKB(Math.min(newTargetSize, maxSizeKB));
-  }, [fileSize, fileSizeKB, maxSizeKB]);
+    // Only update if file size changes significantly
+    const newTargetSize = Math.min(Math.round(fileSizeKB * 0.8), 1024);
+    setTargetSizeKB(Math.max(10, newTargetSize)); // Ensure minimum 10KB
+  }, [fileSize, fileSizeKB]);
 
   const handleTargetSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value, 10);
-    if (isNaN(value) || value <= 0) {
-      setTargetSizeKB(0);
+    if (isNaN(value) || value < 10) { // Minimum 10KB to prevent extreme compression
+      setTargetSizeKB(10);
     } else {
-      // Allow up to 10MB or original size, whichever is smaller
-      setTargetSizeKB(Math.min(value, Math.min(maxSizeKB, fileSizeKB))); 
+      // Allow up to original size or 10MB, whichever is smaller
+      setTargetSizeKB(Math.min(value, maxSizeKB)); 
     }
   };
 
@@ -56,6 +57,9 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
   
   // Helper to calculate percentage of original size
   const percentOfOriginal = Math.round((targetSizeKB / fileSizeKB) * 100);
+  
+  // Warn if compression is too aggressive
+  const isAggressiveCompression = percentOfOriginal < 20 && fileSizeKB > 500;
 
   return (
     <div className="bg-white border rounded-lg p-4 mt-4">
@@ -68,10 +72,11 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
             <Input
               id="targetSize"
               type="number"
-              min={1}
-              max={Math.min(maxSizeKB, fileSizeKB)}
+              min={10}
+              max={maxSizeKB}
               value={targetSizeKB}
               onChange={handleTargetSizeChange}
+              className="text-right"
             />
             <Button
               variant="outline"
@@ -84,6 +89,11 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
           <p className="text-xs text-muted-foreground mt-1">
             Original: {Math.round(fileSizeKB)} KB • Target: {percentOfOriginal}% of original
           </p>
+          {isAggressiveCompression && (
+            <p className="text-xs text-amber-600 mt-1">
+              Warning: Very aggressive compression may result in quality loss
+            </p>
+          )}
         </div>
 
         <div>
@@ -107,7 +117,7 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
       <Button
         className="w-full mt-4"
         onClick={() => onCompress(targetSizeKB, quality)}
-        disabled={isCompressing || targetSizeKB <= 0}
+        disabled={isCompressing || targetSizeKB < 10}
       >
         {isCompressing ? (
           <>
