@@ -20,8 +20,8 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
   const fileSizeKB = fileSize / 1024;
   const maxSizeKB = 10 * 1024; // 10MB in KB
   const [targetSizeKB, setTargetSizeKB] = useState(
-    Math.max(20, Math.round(fileSizeKB * 0.5))
-  ); // Default to 50% of original
+    Math.max(20, Math.round(fileSizeKB * 0.8))
+  ); // Default to 80% of original
   const [quality, setQuality] = useState(0.7); // Default quality value
 
   const handleTargetSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,12 +30,18 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
       setTargetSizeKB(0);
     } else {
       // Allow up to 10MB or original size, whichever is smaller
-      setTargetSizeKB(Math.min(value, Math.max(maxSizeKB, fileSizeKB))); 
+      setTargetSizeKB(Math.min(value, Math.min(maxSizeKB, fileSizeKB))); 
     }
   };
 
   const handleQualityChange = (value: number[]) => {
     setQuality(value[0] / 100);
+  };
+
+  // Convert KB to MB for display and button
+  const setToMB = (mbValue: number) => {
+    const kbValue = mbValue * 1024; // Convert MB to KB
+    setTargetSizeKB(Math.min(kbValue, fileSizeKB));
   };
 
   return (
@@ -56,10 +62,10 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
             />
             <Button
               variant="outline"
-              onClick={() => setTargetSizeKB(Math.max(20, Math.round(fileSizeKB * 0.5)))}
+              onClick={() => setToMB(1)}
               type="button"
             >
-              50%
+              1MB
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
