@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,10 +19,20 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
 }) => {
   const fileSizeKB = fileSize / 1024;
   const maxSizeKB = 10 * 1024; // 10MB in KB
+  
+  // Default to 80% of original or 1024KB, whichever is larger
+  const initialTargetSize = Math.max(1024, Math.round(fileSizeKB * 0.8));
   const [targetSizeKB, setTargetSizeKB] = useState(
-    Math.max(20, Math.round(fileSizeKB * 0.8))
-  ); // Default to 80% of original
+    Math.min(initialTargetSize, maxSizeKB)
+  );
+  
   const [quality, setQuality] = useState(0.7); // Default quality value
+
+  // Update target size when file size changes
+  useEffect(() => {
+    const newTargetSize = Math.max(1024, Math.round(fileSizeKB * 0.8));
+    setTargetSizeKB(Math.min(newTargetSize, maxSizeKB));
+  }, [fileSize, fileSizeKB, maxSizeKB]);
 
   const handleTargetSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value, 10);
@@ -43,6 +53,9 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
     const kbValue = 1024; // 1024 KB = 1 MB
     setTargetSizeKB(Math.min(kbValue, fileSizeKB));
   };
+  
+  // Helper to calculate percentage of original size
+  const percentOfOriginal = Math.round((targetSizeKB / fileSizeKB) * 100);
 
   return (
     <div className="bg-white border rounded-lg p-4 mt-4">
@@ -56,7 +69,7 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
               id="targetSize"
               type="number"
               min={1}
-              max={maxSizeKB}
+              max={Math.min(maxSizeKB, fileSizeKB)}
               value={targetSizeKB}
               onChange={handleTargetSizeChange}
             />
@@ -69,7 +82,7 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Original: {Math.round(fileSizeKB)} KB • Max allowed: 10,240 KB (10MB)
+            Original: {Math.round(fileSizeKB)} KB • Target: {percentOfOriginal}% of original
           </p>
         </div>
 

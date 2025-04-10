@@ -21,49 +21,50 @@ export const compressImage = async (
     reader.onload = function (e) {
       img.onload = function () {
         // Binary search for optimal quality
-        let minQuality = 0.1;
+        let minQuality = 0.01;  // Lower minimum quality
         let maxQuality = 1.0;
         let quality = initialQuality;
         let blob: Blob;
         let attempts = 0;
-        const maxAttempts = 10;
+        const maxAttempts = 15;  // Increased max attempts
+        
+        // Create a canvas to draw the image - moved outside the loop for efficiency
+        const canvas = document.createElement('canvas');
+        
+        // Calculate dimensions - maintain aspect ratio
+        const maxDimension = 3000; // Increased for high quality large images
+        const aspectRatio = img.width / img.height;
+        let width = img.width;
+        let height = img.height;
+        
+        // Resize if needed (this already helps with file size)
+        if (width > maxDimension || height > maxDimension) {
+          if (aspectRatio > 1) {
+            width = maxDimension;
+            height = width / aspectRatio;
+          } else {
+            height = maxDimension;
+            width = height * aspectRatio;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw image on canvas
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Could not get canvas context'));
+          return;
+        }
+        
+        ctx.drawImage(img, 0, 0, width, height);
         
         // Start the compression loop
         compressLoop(quality);
         
         function compressLoop(currentQuality: number) {
           attempts++;
-          
-          // Create a canvas to draw the image
-          const canvas = document.createElement('canvas');
-          // Calculate dimensions - maintain aspect ratio
-          const maxDimension = 1800; // Limit max dimension
-          const aspectRatio = img.width / img.height;
-          let width = img.width;
-          let height = img.height;
-          
-          // Resize if needed (this already helps with file size)
-          if (width > maxDimension || height > maxDimension) {
-            if (aspectRatio > 1) {
-              width = maxDimension;
-              height = width / aspectRatio;
-            } else {
-              height = maxDimension;
-              width = height * aspectRatio;
-            }
-          }
-          
-          canvas.width = width;
-          canvas.height = height;
-          
-          // Draw image on canvas
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            reject(new Error('Could not get canvas context'));
-            return;
-          }
-          
-          ctx.drawImage(img, 0, 0, width, height);
           
           // Convert to blob with current quality
           canvas.toBlob(
@@ -80,7 +81,9 @@ export const compressImage = async (
               
               // Check if we're close enough to target or reached max attempts
               const sizeRatio = sizeInKB / targetSizeKB;
-              if ((sizeRatio >= 0.95 && sizeRatio <= 1.05) || attempts >= maxAttempts) {
+              const isWithinTolerance = sizeRatio >= 0.90 && sizeRatio <= 1.10; // 10% tolerance
+              
+              if (isWithinTolerance || attempts >= maxAttempts) {
                 // We've reached target size or max attempts, return result
                 resolve({
                   blob: result,
@@ -88,13 +91,16 @@ export const compressImage = async (
                   dimensions: { width, height }
                 });
               } else {
-                // Binary search for next quality level
+                // Binary search for next quality level with more precise adjustments
                 if (sizeInKB > targetSizeKB) {
                   maxQuality = currentQuality;
-                  quality = (minQuality + currentQuality) / 2;
+                  // More aggressive quality reduction for larger files
+                  const reduction = sizeInKB > targetSizeKB * 2 ? 0.7 : 0.5;
+                  quality = minQuality + (currentQuality - minQuality) * reduction;
                 } else {
                   minQuality = currentQuality;
-                  quality = (maxQuality + currentQuality) / 2;
+                  // More conservative quality increase for smaller files
+                  quality = currentQuality + (maxQuality - currentQuality) * 0.3;
                 }
                 
                 // Continue the loop with new quality
