@@ -1,186 +1,155 @@
+import { sanitizeFileName } from "./fileUtils";
 
-// This utility handles the image compression and resizing
-
-/**
- * Compresses an image to a target file size
- * @param file Original image file
- * @param targetSizeKB Target size in KB
- * @param initialQuality Starting quality (0-1)
- * @returns Promise with the compressed image blob
- */
+// Image compression function with improved sizing algorithm
 export const compressImage = async (
   file: File,
   targetSizeKB: number,
-  initialQuality = 0.7
-): Promise<{ blob: Blob; quality: number; dimensions: { width: number; height: number } }> => {
+  initialQuality: number = 0.7
+): Promise<{
+  blob: Blob;
+  quality: number;
+  dimensions: { width: number; height: number };
+}> => {
   return new Promise((resolve, reject) => {
-    // Create an image element to load the file
     const img = new Image();
     const reader = new FileReader();
-
-    reader.onload = function (e) {
-      img.onload = function () {
-        // Binary search for optimal quality
-        let minQuality = 0.01;  // Lower minimum quality
-        let maxQuality = 1.0;
-        let quality = initialQuality;
-        let blob: Blob;
-        let attempts = 0;
-        let bestBlob: Blob | null = null;
-        let bestQuality = 0;
-        let bestSizeDiff = Infinity;
-        const maxAttempts = 25;  // Increased max attempts for better precision
-        
-        // Create a canvas to draw the image - moved outside the loop for efficiency
-        const canvas = document.createElement('canvas');
-        
-        // Calculate dimensions - maintain aspect ratio
-        const maxDimension = 3000; // Increased for high quality large images
-        const aspectRatio = img.width / img.height;
-        let width = img.width;
-        let height = img.height;
-        
-        // Resize if needed (this already helps with file size)
-        if (width > maxDimension || height > maxDimension) {
-          if (aspectRatio > 1) {
-            width = maxDimension;
-            height = width / aspectRatio;
-          } else {
-            height = maxDimension;
-            width = height * aspectRatio;
-          }
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        
-        // Draw image on canvas
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error('Could not get canvas context'));
-          return;
-        }
-        
-        ctx.drawImage(img, 0, 0, width, height);
-        
-        // Start the compression loop
-        compressLoop(quality);
-        
-        function compressLoop(currentQuality: number) {
-          attempts++;
-          
-          // Convert to blob with current quality
-          canvas.toBlob(
-            (result) => {
-              if (!result) {
-                reject(new Error('Failed to compress image'));
-                return;
-              }
-              
-              blob = result;
-              const sizeInKB = result.size / 1024;
-              
-              console.log(`Attempt ${attempts}: Quality ${currentQuality.toFixed(2)}, Size: ${sizeInKB.toFixed(1)}KB, Target: ${targetSizeKB}KB`);
-              
-              // Track the best result (closest to target size)
-              const currentSizeDiff = Math.abs(sizeInKB - targetSizeKB);
-              if (currentSizeDiff < bestSizeDiff) {
-                bestSizeDiff = currentSizeDiff;
-                bestBlob = result;
-                bestQuality = currentQuality;
-              }
-              
-              // Check if we're close enough to target or reached max attempts
-              const sizeRatio = sizeInKB / targetSizeKB;
-              const isWithinTolerance = sizeRatio >= 0.95 && sizeRatio <= 1.05; // 5% tolerance
-              
-              if (isWithinTolerance || attempts >= maxAttempts) {
-                // We've reached target size or max attempts, return result
-                console.log(`Final result: Quality ${currentQuality.toFixed(2)}, Size: ${sizeInKB.toFixed(1)}KB, Target: ${targetSizeKB}KB`);
-                
-                // If we have a best blob and we're not within tolerance, use the best one
-                if (!isWithinTolerance && bestBlob) {
-                  console.log(`Using best match: Quality ${bestQuality.toFixed(2)}, Size: ${(bestBlob.size / 1024).toFixed(1)}KB`);
-                  resolve({
-                    blob: bestBlob,
-                    quality: bestQuality,
-                    dimensions: { width, height }
-                  });
-                } else {
-                  resolve({
-                    blob: result,
-                    quality: currentQuality,
-                    dimensions: { width, height }
-                  });
-                }
-              } else {
-                // Binary search with more precise adjustments
-                if (sizeInKB > targetSizeKB) {
-                  maxQuality = currentQuality;
-                  // More aggressive quality reduction for larger files
-                  const reduction = sizeInKB > targetSizeKB * 2 ? 0.5 : 0.7;
-                  quality = minQuality + (currentQuality - minQuality) * reduction;
-                } else {
-                  minQuality = currentQuality;
-                  // More conservative quality increase for smaller files
-                  quality = currentQuality + (maxQuality - currentQuality) * 0.3;
-                }
-                
-                // Prevent getting stuck in tiny increments
-                if (Math.abs(quality - currentQuality) < 0.01) {
-                  quality = sizeInKB > targetSizeKB ? 
-                    Math.max(minQuality, currentQuality - 0.05) : 
-                    Math.min(maxQuality, currentQuality + 0.05);
-                }
-                
-                // Continue the loop with new quality
-                compressLoop(quality);
-              }
-            },
-            file.type, // Keep same format
-            currentQuality // Use current quality level
-          );
-        }
-      };
-      
-      img.onerror = function() {
-        reject(new Error('Failed to load image'));
-      };
-      
-      // Load the image from data URL
+    
+    reader.onload = (e) => {
       img.src = e.target?.result as string;
     };
     
-    reader.onerror = function() {
-      reject(new Error('Failed to read file'));
+    img.onload = async () => {
+      try {
+        const targetSizeBytes = targetSizeKB * 1024;
+        
+        // If target is larger than original, just return the original
+        if (targetSizeBytes >= file.size) {
+          resolve({
+            blob: file,
+            quality: 1.0,
+            dimensions: { width: img.width, height: img.height }
+          });
+          return;
+        }
+        
+        let bestBlob: Blob | null = null;
+        let bestQuality = 0;
+        let bestSizeDiff = Infinity;
+        const maxAttempts = 30;  // Increased max attempts for better precision
+        
+        // Create a canvas to draw the image - moved outside the loop for efficiency
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        if (!ctx) {
+          reject(new Error("Could not create canvas context"));
+          return;
+        }
+        
+        // Set canvas dimensions to match the image
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        // Draw the image on the canvas
+        ctx.drawImage(img, 0, 0);
+        
+        // Binary search for optimal quality
+        let minQuality = 0.01; // Minimum quality to try
+        let maxQuality = 1.0;  // Maximum quality
+        let quality = initialQuality; // Start with initial quality
+        let attempt = 0;
+        const tolerance = 0.02; // 2% tolerance for target size
+        
+        // Get MIME type from file or default to jpeg
+        const mimeType = file.type || 'image/jpeg';
+        
+        while (attempt < maxAttempts) {
+          attempt++;
+          
+          // Get blob at current quality
+          const blob = await new Promise<Blob>((resolve) => {
+            canvas.toBlob(blob => {
+              if (blob) resolve(blob);
+              else resolve(new Blob([]));
+            }, mimeType, quality);
+          });
+          
+          const sizeDiffKB = Math.abs((blob.size - targetSizeBytes) / 1024);
+          const sizeRatio = blob.size / targetSizeBytes;
+          
+          // If within tolerance or we've exhausted attempts, use this one
+          if (sizeRatio >= (1 - tolerance) && sizeRatio <= (1 + tolerance) || attempt >= maxAttempts) {
+            bestBlob = blob;
+            bestQuality = quality;
+            break;
+          }
+          
+          // Keep track of the closest match so far
+          if (sizeDiffKB < bestSizeDiff) {
+            bestBlob = blob;
+            bestQuality = quality;
+            bestSizeDiff = sizeDiffKB;
+          }
+          
+          // Adjust quality based on result
+          if (blob.size > targetSizeBytes) {
+            maxQuality = quality;
+            quality = (minQuality + quality) / 2;
+          } else {
+            minQuality = quality;
+            quality = (maxQuality + quality) / 2;
+          }
+        }
+        
+        if (bestBlob) {
+          resolve({
+            blob: bestBlob,
+            quality: bestQuality,
+            dimensions: { width: img.width, height: img.height }
+          });
+        } else {
+          reject(new Error("Failed to compress image"));
+        }
+      } catch (err) {
+        reject(err);
+      }
     };
     
-    // Read the file
+    img.onerror = () => {
+      reject(new Error("Failed to load image"));
+    };
+    
     reader.readAsDataURL(file);
   });
 };
 
-/**
- * Get file size in human-readable format
- */
+// Generate a name for the compressed file
+export const getCompressedFileName = (originalName: string, sizeKB: number): string => {
+  const nameParts = originalName.split('.');
+  const extension = nameParts.pop() || 'jpg';
+  const baseName = nameParts.join('.');
+  
+  // Sanitize the filename
+  const safeBaseName = sanitizeFileName(baseName);
+  
+  return `${safeBaseName}-compressed-${sizeKB}kb.${extension.toLowerCase()}`;
+};
+
+// Format file size for display
 export const formatFileSize = (bytes: number): string => {
   if (bytes < 1024) {
     return `${bytes} bytes`;
   } else {
-    return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${Math.round(bytes / 1024)} KB`;
   }
 };
 
-/**
- * Get formatted filename with size indicator
- */
-export const getCompressedFileName = (originalName: string, sizeKB: number): string => {
-  const nameParts = originalName.split('.');
-  const ext = nameParts.pop();
-  const baseName = nameParts.join('.');
-  
-  // Always display size in KB
-  const sizeDisplay = `${Math.round(sizeKB)}kb`;
-  
-  return `${baseName}_${sizeDisplay}.${ext}`;
+// Create a utility to sanitize filenames if it doesn't exist
+export const sanitizeFileName = (fileName: string): string => {
+  // Remove invalid characters for filenames
+  return fileName
+    .replace(/[/\\?%*:|"<>]/g, '-') // Replace invalid chars with dash
+    .replace(/\s+/g, '-')           // Replace spaces with dash
+    .replace(/-+/g, '-')            // Replace multiple dashes with single dash
+    .trim();
 };

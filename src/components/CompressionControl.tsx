@@ -3,7 +3,6 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import { Loader2 } from "lucide-react";
 
 interface CompressionControlProps {
@@ -26,7 +25,8 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
     Math.max(10, initialTargetSize) // Ensure minimum 10KB
   );
   
-  const [quality, setQuality] = useState(0.7); // Default quality value
+  // Default initial quality (will be adjusted by the algorithm)
+  const defaultQuality = 0.7;
 
   // Update target size when file size changes
   useEffect(() => {
@@ -45,10 +45,6 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
     }
   };
 
-  const handleQualityChange = (value: number[]) => {
-    setQuality(value[0] / 100);
-  };
-
   // Set to 1024 KB (1MB equivalent) button
   const setTo1024KB = () => {
     setTargetSizeKB(Math.min(1024, fileSizeKB));
@@ -62,12 +58,12 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
 
   return (
     <div className="bg-white border rounded-lg p-4 mt-4">
-      <div className="grid sm:grid-cols-2 gap-6">
-        <div>
-          <Label htmlFor="targetSize" className="mb-1.5 block">
+      <div className="flex flex-col items-center">
+        <div className="w-full max-w-md">
+          <Label htmlFor="targetSize" className="mb-1.5 block text-center">
             Target Size (KB)
           </Label>
-          <div className="flex gap-2">
+          <div className="flex gap-2 mb-2">
             <Input
               id="targetSize"
               type="number"
@@ -85,48 +81,33 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
               1024KB
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Original: {Math.round(fileSizeKB)} KB • Target: {percentOfOriginal}% of original
-          </p>
-          {isAggressiveCompression && (
-            <p className="text-xs text-amber-600 mt-1">
-              Warning: Very aggressive compression may result in quality loss
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">
+              Original: {Math.round(fileSizeKB)} KB • Target: {percentOfOriginal}% of original
             </p>
+            {isAggressiveCompression && (
+              <p className="text-xs text-amber-600 mt-1">
+                Warning: Very aggressive compression may result in quality loss
+              </p>
+            )}
+          </div>
+        </div>
+
+        <Button
+          className="w-full max-w-md mt-4"
+          onClick={() => onCompress(targetSizeKB, defaultQuality)}
+          disabled={isCompressing || targetSizeKB < 10}
+        >
+          {isCompressing ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Compressing...
+            </>
+          ) : (
+            "Compress Image"
           )}
-        </div>
-
-        <div>
-          <Label htmlFor="quality" className="mb-1.5 block">
-            Initial Quality: {Math.round(quality * 100)}%
-          </Label>
-          <Slider
-            id="quality"
-            defaultValue={[70]}
-            min={10}
-            max={100}
-            step={1}
-            onValueChange={handleQualityChange}
-          />
-          <p className="text-xs text-muted-foreground mt-1">
-            The algorithm will adjust quality to meet the target size
-          </p>
-        </div>
+        </Button>
       </div>
-
-      <Button
-        className="w-full mt-4"
-        onClick={() => onCompress(targetSizeKB, quality)}
-        disabled={isCompressing || targetSizeKB < 10}
-      >
-        {isCompressing ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Compressing...
-          </>
-        ) : (
-          "Compress Image"
-        )}
-      </Button>
     </div>
   );
 };
