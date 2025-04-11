@@ -143,13 +143,3 @@ export const formatFileSize = (bytes: number): string => {
     return `${Math.round(bytes / 1024)} KB`;
   }
 };
-
-// Create a utility to sanitize filenames
-export const sanitizeFileName = (fileName: string): string => {
-  // Remove invalid characters for filenames
-  return fileName
-    .replace(/[/\\?%*:|"<>]/g, '-') // Replace invalid chars with dash
-    .replace(/\s+/g, '-')           // Replace spaces with dash
-    .replace(/-+/g, '-')            // Replace multiple dashes with single dash
-    .trim();
-};
