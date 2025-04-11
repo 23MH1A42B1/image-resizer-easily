@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 
 interface CompressionControlProps {
   fileSize: number;
@@ -36,18 +37,25 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
   }, [fileSize, fileSizeKB]);
 
   const handleTargetSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value, 10);
-    if (isNaN(value) || value < 10) { // Minimum 10KB to prevent extreme compression
-      setTargetSizeKB(10);
-    } else {
-      // Allow up to original size or 10MB, whichever is smaller
-      setTargetSizeKB(Math.min(value, maxSizeKB)); 
+    const inputValue = e.target.value;
+    let value = parseInt(inputValue, 10);
+    
+    if (isNaN(value)) {
+      value = 10; // Default to minimum if not a number
     }
+    
+    // Ensure the value is within valid range
+    value = Math.max(10, Math.min(value, maxSizeKB));
+    setTargetSizeKB(value);
+  };
+  
+  const handleSliderChange = (value: number[]) => {
+    setTargetSizeKB(value[0]);
   };
 
   // Set to 1024 KB (1MB equivalent) button
   const setTo1024KB = () => {
-    setTargetSizeKB(Math.min(1024, fileSizeKB));
+    setTargetSizeKB(Math.min(1024, maxSizeKB));
   };
   
   // Helper to calculate percentage of original size
@@ -59,11 +67,23 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
   return (
     <div className="bg-white border rounded-lg p-4 mt-4">
       <div className="flex flex-col items-center">
-        <div className="w-full max-w-md">
-          <Label htmlFor="targetSize" className="mb-1.5 block text-center font-medium">
-            Target Size (KB)
+        <div className="w-full max-w-md space-y-4">
+          <Label htmlFor="targetSize" className="text-center block font-medium mb-1">
+            Target Size: {targetSizeKB} KB ({percentOfOriginal}% of original)
           </Label>
-          <div className="flex gap-2 mb-2 justify-center">
+          
+          <div className="px-2">
+            <Slider
+              value={[targetSizeKB]}
+              min={10}
+              max={maxSizeKB}
+              step={1}
+              onValueChange={handleSliderChange}
+              className="mb-4"
+            />
+          </div>
+          
+          <div className="flex gap-2 justify-center">
             <Input
               id="targetSize"
               type="number"
@@ -79,19 +99,15 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
               type="button"
               className="whitespace-nowrap"
             >
-              Set to 1024 KB
+              Set to 1MB
             </Button>
           </div>
-          <div className="text-center mt-2">
-            <p className="text-sm text-muted-foreground">
-              Original: {Math.round(fileSizeKB)} KB • Target: {percentOfOriginal}% of original
+
+          {isAggressiveCompression && (
+            <p className="text-xs text-amber-600 mt-1 text-center">
+              Warning: Very aggressive compression may result in quality loss
             </p>
-            {isAggressiveCompression && (
-              <p className="text-xs text-amber-600 mt-1">
-                Warning: Very aggressive compression may result in quality loss
-              </p>
-            )}
-          </div>
+          )}
         </div>
 
         <Button
