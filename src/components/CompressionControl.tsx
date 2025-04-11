@@ -23,7 +23,7 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
   // Default target size - 80% of original or 1024KB (1MB), whichever is smaller
   const initialTargetSize = Math.min(Math.round(fileSizeKB * 0.8), 1024);
   const [targetSizeKB, setTargetSizeKB] = useState(
-    Math.max(1, initialTargetSize) // Ensure minimum 1KB
+    Math.max(0, initialTargetSize) // Ensure minimum 0KB
   );
   
   // Default initial quality - will be adjusted by the algorithm
@@ -33,7 +33,7 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
   useEffect(() => {
     // Only update if file size changes significantly
     const newTargetSize = Math.min(Math.round(fileSizeKB * 0.8), 1024);
-    setTargetSizeKB(Math.max(1, newTargetSize)); // Ensure minimum 1KB
+    setTargetSizeKB(Math.max(0, newTargetSize)); // Ensure minimum 0KB
   }, [fileSize, fileSizeKB]);
 
   const handleTargetSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,11 +41,11 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
     let value = parseInt(inputValue, 10);
     
     if (isNaN(value)) {
-      value = 1; // Default to minimum if not a number
+      value = 0; // Default to minimum if not a number
     }
     
     // Ensure the value is within valid range
-    value = Math.max(1, Math.min(value, maxSizeKB));
+    value = Math.max(0, Math.min(value, maxSizeKB));
     setTargetSizeKB(value);
   };
   
@@ -75,7 +75,7 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
           <div className="px-2">
             <Slider
               value={[targetSizeKB]}
-              min={1}
+              min={0}
               max={maxSizeKB}
               step={1}
               onValueChange={handleSliderChange}
@@ -87,7 +87,7 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
             <Input
               id="targetSize"
               type="number"
-              min={1}
+              min={0}
               max={maxSizeKB}
               value={targetSizeKB}
               onChange={handleTargetSizeChange}
@@ -113,7 +113,7 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
         <Button
           className="w-full max-w-md mt-4"
           onClick={() => onCompress(targetSizeKB, defaultQuality)}
-          disabled={isCompressing || targetSizeKB < 1}
+          disabled={isCompressing || targetSizeKB < 0}
         >
           {isCompressing ? (
             <>
