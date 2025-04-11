@@ -25,7 +25,7 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
     Math.max(10, initialTargetSize) // Ensure minimum 10KB
   );
   
-  // Default initial quality (will be adjusted by the algorithm)
+  // Default initial quality - will be adjusted by the algorithm
   const defaultQuality = 0.7;
 
   // Update target size when file size changes
@@ -60,10 +60,10 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
     <div className="bg-white border rounded-lg p-4 mt-4">
       <div className="flex flex-col items-center">
         <div className="w-full max-w-md">
-          <Label htmlFor="targetSize" className="mb-1.5 block text-center">
+          <Label htmlFor="targetSize" className="mb-1.5 block text-center font-medium">
             Target Size (KB)
           </Label>
-          <div className="flex gap-2 mb-2">
+          <div className="flex gap-2 mb-2 justify-center">
             <Input
               id="targetSize"
               type="number"
@@ -71,17 +71,18 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
               max={maxSizeKB}
               value={targetSizeKB}
               onChange={handleTargetSizeChange}
-              className="text-right"
+              className="text-right w-32"
             />
             <Button
               variant="outline"
               onClick={setTo1024KB}
               type="button"
+              className="whitespace-nowrap"
             >
-              1024KB
+              Set to 1024 KB
             </Button>
           </div>
-          <div className="text-center">
+          <div className="text-center mt-2">
             <p className="text-sm text-muted-foreground">
               Original: {Math.round(fileSizeKB)} KB • Target: {percentOfOriginal}% of original
             </p>

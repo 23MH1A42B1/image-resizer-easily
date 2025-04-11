@@ -144,7 +144,7 @@ export const formatFileSize = (bytes: number): string => {
   }
 };
 
-// Create a utility to sanitize filenames if it doesn't exist
+// Create a utility to sanitize filenames
 export const sanitizeFileName = (fileName: string): string => {
   // Remove invalid characters for filenames
   return fileName
