@@ -29,7 +29,7 @@ export const compressImage = async (
         let bestBlob: Blob | null = null;
         let bestQuality = 0;
         let bestSizeDiff = Infinity;
-        const maxAttempts = 20;  // Increased max attempts for better precision
+        const maxAttempts = 25;  // Increased max attempts for better precision
         
         // Create a canvas to draw the image - moved outside the loop for efficiency
         const canvas = document.createElement('canvas');
@@ -166,8 +166,6 @@ export const compressImage = async (
 export const formatFileSize = (bytes: number): string => {
   if (bytes < 1024) {
     return `${bytes} bytes`;
-  } else if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`;
   } else {
     return `${(bytes / 1024).toFixed(0)} KB`;
   }

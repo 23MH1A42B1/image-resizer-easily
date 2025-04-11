@@ -20,7 +20,7 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
   const fileSizeKB = fileSize / 1024;
   const maxSizeKB = Math.min(10 * 1024, fileSizeKB); // 10MB in KB or original size, whichever is smaller
   
-  // Default to 80% of original or 1024KB, whichever is smaller
+  // Default target size - 80% of original or 1024KB (1MB), whichever is smaller
   const initialTargetSize = Math.min(Math.round(fileSizeKB * 0.8), 1024);
   const [targetSizeKB, setTargetSizeKB] = useState(
     Math.max(10, initialTargetSize) // Ensure minimum 10KB
@@ -51,8 +51,7 @@ const CompressionControl: React.FC<CompressionControlProps> = ({
 
   // Set to 1024 KB (1MB equivalent) button
   const setTo1024KB = () => {
-    const kbValue = 1024; // 1024 KB = 1 MB
-    setTargetSizeKB(Math.min(kbValue, fileSizeKB));
+    setTargetSizeKB(Math.min(1024, fileSizeKB));
   };
   
   // Helper to calculate percentage of original size
